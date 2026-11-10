@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Estrategia de Conteo Previo e Inventario General - Coraza</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--ink:#1c2733;--mut:#5d6b7a;--line:#dfe5ec;--pri:#12355b;--acc:#c8501e;--ok:#1f8a4c;--warn:#d99a00;--bad:#c62828;--e1:#7b3fa0;--e2:#1565a8;--e3:#1f8a4c}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+header.top{background:linear-gradient(120deg,#0d2742,#12355b 60%,#1b4a7d);color:#fff;padding:22px 28px 18px}
+header.top h1{margin:0 0 4px;font-size:22px}header.top p{margin:0;color:#c9d7e6;font-size:13px}
+.layout{display:flex;align-items:flex-start}
+nav.side{position:sticky;top:0;align-self:flex-start;width:230px;min-width:230px;height:100vh;overflow:auto;background:#fff;border-right:1px solid var(--line);padding:14px 10px}
+nav.side a{display:block;padding:8px 12px;margin:2px 0;border-radius:8px;color:var(--ink);text-decoration:none;font-size:14px}
+nav.side a:hover{background:#eef3f9}nav.side a.on{background:var(--pri);color:#fff}
+nav.side .grp{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin:14px 12px 4px}
+main{flex:1;min-width:0;padding:22px 28px 60px;max-width:1280px}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:22px;scroll-margin-top:12px}
+section h2{margin:0 0 12px;font-size:20px;color:var(--pri)}section h3{margin:20px 0 8px;font-size:16px;color:var(--pri)}
+p{margin:8px 0}ul,ol{margin:6px 0 6px 20px;padding:0}li{margin:3px 0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0}
+.kpi{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fafcfe}
+.kpi b{display:block;font-size:26px;line-height:1.1;color:var(--pri)}.kpi span{font-size:12.5px;color:var(--mut)}
+.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:14px 0}
+.stage{border:1px solid var(--line);border-top:5px solid var(--e1);border-radius:12px;padding:14px 16px;background:#fff}
+.stage.s2{border-top-color:var(--e2)}.stage.s3{border-top-color:var(--e3)}.stage.s4{border-top-color:#6b7785}
+.stage h4{margin:0 0 4px;font-size:15px}.stage .n{font-size:28px;font-weight:700;color:var(--pri)}.stage small{color:var(--mut)}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl th{background:#eef3f9;text-align:left;padding:8px 10px;border-bottom:2px solid var(--line);position:sticky;top:0;white-space:nowrap}
+.tbl td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}.tbl tr:hover td{background:#fafcff}
+.wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.btn{display:inline-block;border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer}
+.btn:hover{filter:brightness(1.12)}.btn.ghost{background:#fff;color:var(--pri)}.btn.sm{padding:4px 9px;font-size:12px}.btn.acc{background:var(--acc);border-color:var(--acc)}
+.badge{display:inline-block;border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:600;color:#fff;white-space:nowrap}
+.b-NEG{background:#c62828}.b-ZV{background:#e65100}.b-Z0{background:#7b8794}.b-INM{background:#1565a8}.b-RG{background:#1f8a4c}.b-RC{background:#4f9d69}
+.sem{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px;background:#cbd2d9}
+.sem.v{background:var(--ok)}.sem.a{background:var(--warn)}.sem.r{background:var(--bad)}
+.note{border-left:4px solid var(--acc);background:#fff7f2;padding:10px 14px;border-radius:6px;margin:12px 0;font-size:14px}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:10px 0 14px}
+.tools label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}
+.tools input,.tools select,textarea,.cell{border:1px solid #c7d0da;border-radius:7px;padding:6px 8px;font:inherit;font-size:13.5px;background:#fff}
+.cell{width:84px;text-align:right}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.chip{background:#eef3f9;border-radius:999px;padding:4px 12px;font-size:12.5px}
+.bar{height:10px;border-radius:6px;background:#e5eaf0;overflow:hidden;display:flex;margin:6px 0}.bar i{display:block;height:100%}
+.dcards{display:grid;gap:14px}.dcard{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:#fff}
+.dcard h4{margin:0 0 4px;font-size:15px}.dcard .ctx{color:var(--mut);font-size:13.5px}.dcard .prop{margin:6px 0;font-size:14px}
+.dcard .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}.dcard textarea{flex:1;min-width:240px;min-height:54px}
+.dcard.ok{border-color:#9fd3b5;background:#f4fbf7}.dcard.no{border-color:#e2a5a5;background:#fdf5f5}
+.pager{display:flex;gap:8px;align-items:center;margin:10px 0;font-size:13px}
+#banner{display:none;background:#fff3cd;border-bottom:2px solid #d99a00;padding:12px 28px;font-size:14px}
+#sync{position:fixed;left:12px;bottom:12px;z-index:40;background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-size:12.5px;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.menu-btn{display:none}
+@media(max-width:900px){nav.side{display:none;position:fixed;z-index:20;left:0;top:0;width:78%}nav.side.open{display:block;box-shadow:0 0 30px rgba(0,0,0,.3)}.menu-btn{display:inline-block;position:fixed;z-index:30;right:12px;bottom:12px}main{padding:14px}}
+@media print{nav.side,.tools,.pager,.btn,.menu-btn,#sync{display:none!important}body{background:#fff}section{break-inside:avoid;border:none;padding:6px 0}.wrap{overflow:visible}}
+</style></head><body>
+<div id="banner"></div>
+<header class="top"><h1>Estrategia de Conteo Previo y Planificación del Inventario General</h1>
+<p>SIDERMET SAN LUIS S.A. (Coraza) · Odoo 18 Enterprise · Alcance: <span data-s="ubic">RUT3/Existencias</span> · Reunión directiva 10/11/2026 · Inventario General: viernes 20/11/2026 · Foto de datos: <span data-s="snap">—</span></p></header>
+<div class="layout">
+<nav class="side" id="nav">
+<div class="grp">Documento</div>
+<a href="#resumen">1. Resumen ejecutivo</a><a href="#etapas">2. Etapas y alcance</a><a href="#cronograma">3. Cronograma de 10 días</a>
+<div class="grp">Trabajo en campo</div>
+<a href="#listados">4. Listados de SKU y cotejo</a><a href="#protocolo">5. Cotejo y reconteo</a>
+<div class="grp">Cierre</div>
+<a href="#general">6. Inventario General 24/48 hs</a><a href="#decisiones">7. Decisiones de Dirección</a><a href="#supuestos">8. Datos y supuestos</a><a href="#firmas">9. Aprobación</a>
+</nav>
+<main>
+
+<section id="resumen"><h2>1. Resumen ejecutivo para Dirección</h2>
+<p><b>Objetivo.</b> Llegar al Inventario General del viernes 20/11 con la base auditada y saneada, de modo que las 24/48 hs de cierre se usen para contar y no para investigar diferencias.</p>
+<p><b>Exclusión explícita.</b> Toda la categoría <b data-s="excl">FERRETERIA</b> queda fuera del alcance, igual que los servicios, conceptos y recargos marcados como almacenables (no son mercadería física).</p>
+<p><b>Alcance físico.</b> El inventario se realiza <b>únicamente en la ubicación <span data-s="ubic">RUT3/Existencias</span></b>. Saldos, clasificación y listados se calculan sobre esa ubicación. Quedan fuera los demás depósitos y las ubicaciones RUT3/Entrada y RUT3/Salida.</p>
+<div class="kpis">
+<div class="kpi"><b data-s="total">—</b><span>SKU en el universo a auditar</span></div>
+<div class="kpi"><b data-s="e1">—</b><span>con saldo negativo o en cero</span></div>
+<div class="kpi"><b data-s="inm">—</b><span>con stock y sin ventas en el período</span></div>
+<div class="kpi"><b data-s="e3">—</b><span>con stock y con ventas (rotación)</span></div>
+</div>
+<h3>Régimen de trabajo por etapas</h3>
+<div class="stages">
+<div class="stage"><h4>Etapa 1 · Días 1 y 2 · 11 y 12/11</h4><div class="n" data-s="e1">—</div>
+<p>Validar en el depósito los SKU con <b>saldo negativo</b> (<span data-s="neg"></span>) y con <b>stock en cero</b> (<span data-s="z0v"></span>). Primero los negativos y los ceros con ventas recientes.</p><small>Objetivo: confirmar si de verdad no hay mercadería o si hay fallas de registro.</small></div>
+<div class="stage s2"><h4>Etapa 2 · Días 3 y 4 · 13 y 14/11</h4><div class="n" data-s="inm">—</div>
+<p>Contar los SKU <b>con stock y sin ventas en el período</b>, de mayor a menor cantidad teórica.</p><small>Objetivo: auditar mercadería inmovilizada que ocupa espacio y capital.</small></div>
+<div class="stage s3"><h4>Etapa 3 · Días 5 y 6 · 15 y 16/11</h4><div class="n" data-s="e3">—</div>
+<p>En los SKU de <b>mayor rotación</b>: contar los <b>paquetes completos</b> y los productos de <b>mayor volumen</b> para dejar preparado el conteo del inventario final.</p><small>Objetivo: llegar al Día 10 con lo voluminoso ya contado y rotulado.</small></div>
+<div class="stage s4"><h4>Días 7 a 9 · 17 al 19/11</h4><div class="n">Cierre</div>
+<p>Reconteo de los casos rojos, ajustes aprobados, control de movimientos posteriores y preparación del cierre total.</p><small>El Día 10 (20/11) se realiza el Inventario General.</small></div>
+</div>
+<p><b>Flujo de trabajo:</b> Conteo físico → Carga en Odoo (Ajustes de inventario) → Cotejo físico vs. virtual → Análisis de causa raíz → Reconteo → Ajuste de regularización.</p>
+<div class="note">Cada etapa tiene su listado de SKU en la sección <a href="#listados">4</a>. Lo que se carga acá (contado, observaciones, decisiones) se guarda en la planilla de Google Sheets y lo ven todos. Los puntos para Dirección están en la sección <a href="#decisiones">7</a>.</div>
+</section>
+
+<section id="etapas"><h2>2. Etapas y alcance</h2>
+<div class="wrap"><table class="tbl"><thead><tr><th>Etapa</th><th>Grupo</th><th>Criterio en Odoo</th><th class="num">SKU</th><th>Orden de trabajo</th><th>Descarga</th></tr></thead><tbody>
+<tr><td rowspan="3"><b>1</b><br>Días 1–2</td><td><span class="badge b-NEG">NEG</span> Saldo negativo</td><td>Cantidad en la ubicación &lt; 0</td><td class="num" data-s="neg"></td><td>Del déficit más profundo al menor</td><td rowspan="3"><button class="btn sm" onclick="dlStage(1)">Etapa 1 (CSV)</button></td></tr>
+<tr><td><span class="badge b-ZV">ZV</span> Cero con ventas</td><td>Cantidad = 0 y salidas a clientes desde esa ubicación en el período</td><td class="num" data-s="zv"></td><td>Por unidades vendidas, de más a menos</td></tr>
+<tr><td><span class="badge b-Z0">Z0</span> Cero sin ventas</td><td>Cantidad = 0 y sin salidas en el período</td><td class="num" data-s="z0"></td><td>Por rubro y código (recorrido por zona)</td></tr>
+<tr><td><b>2</b><br>Días 3–4</td><td><span class="badge b-INM">INM</span> Inmovilizado</td><td>Cantidad &gt; 0 y sin salidas a clientes en el período</td><td class="num" data-s="inm"></td><td>De mayor a menor cantidad teórica</td><td><button class="btn sm" onclick="dlStage(2)">Etapa 2 (CSV)</button></td></tr>
+<tr><td rowspan="2"><b>3</b><br>Días 5–6</td><td><span class="badge b-RG">RG</span> Rotación, gran volumen</td><td>Cantidad &gt; 0 con ventas; Chapas, Caños, Perfiles, Aceros, Aluminio, Techos, Construcción, Construcción en seco, Conducción</td><td class="num" data-s="rg"></td><td>Día 5: acero y aluminio. Día 6: resto</td><td rowspan="2"><button class="btn sm" onclick="dlStage(3)">Etapa 3 (CSV)</button></td></tr>
+<tr><td><span class="badge b-RC">RC</span> Rotación, volumen chico</td><td>Cantidad &gt; 0 con ventas; Herrería, Máquinas y soldadoras, Desp. y decorativos, Tejidos y alambres</td><td class="num" data-s="rc"></td><td>Día 6, después de los de gran volumen</td></tr>
+</tbody></table></div>
+<p style="margin-top:12px"><button class="btn acc" onclick="dlAll()">Descargar todo el universo (CSV)</button></p>
+<h3>Definiciones técnicas</h3>
+<ul><li><b>Con ventas / alta rotación:</b> al menos una salida hacia clientes desde la ubicación (<code>stock.move</code> hecho, destino cliente) en los últimos <span data-s="dias">180</span> días.</li>
+<li><b>Gran volumen:</b> el campo volumen está vacío en todos los productos, por lo que el porte se infiere por rubro.</li>
+<li><b>Saldo:</b> cantidad de <code>stock.quant</code> en la ubicación al momento de la foto de datos.</li>
+<li><b>Otras ubicaciones:</b> columna informativa con el stock del SKU fuera de la ubicación del inventario. No se cuenta, pero ayuda a explicar ceros: <span data-s="zotros"></span> SKU están en cero y tienen stock en otra ubicación.</li></ul>
+</section>
+
+<section id="cronograma"><h2>3. Cronograma operativo de 10 días</h2>
+<div class="wrap"><table class="tbl"><thead><tr><th>Día</th><th>Fecha</th><th>Etapa</th><th>Qué se hace</th><th class="num">SKU</th><th class="num">Contados</th><th>Listado</th></tr></thead><tbody id="crono"></tbody></table></div>
+<div class="note">El Día 4 cae sábado y el Día 5 domingo. Ver decisión D3 en la sección 7.</div>
+</section>
+
+<section id="listados"><h2>4. Listados de SKU y cotejo en vivo</h2>
+<p>Elegí el día o la etapa, filtrá y descargá la hoja de conteo. <b>CONTADO</b> y <b>Observaciones</b> se guardan solos en la planilla de Google Sheets (indicador abajo a la izquierda). La diferencia y el semáforo se calculan contra el saldo teórico, o contra el saldo actual de Odoo si se actualizó desde el menú de la planilla.</p>
+<div class="tools">
+<label>Vista<select id="fView"></select></label>
+<label>Buscar (código o nombre)<input id="fQ" type="search" placeholder="ej: TROJA, cumbrera" style="min-width:220px"></label>
+<label>Rubro<select id="fRub"></select></label>
+<label>Clasificación<select id="fGrp"><option value="">Todas</option><option value="NEG">NEG · negativo</option><option value="ZV">ZV · cero con ventas</option><option value="Z0">Z0 · cero sin ventas</option><option value="INM">INM · inmovilizado</option><option value="RG">RG · rotación gran volumen</option><option value="RC">RC · rotación volumen chico</option></select></label>
+<label>Otras ubicaciones<select id="fDep"><option value="">Todos</option><option value="1">Solo con stock fuera de la ubicación</option></select></label>
+<label>Estado del cotejo<select id="fEst"><option value="">Todos</option><option value="pend">Sin contar</option><option value="cont">Contados</option><option value="v">Verde</option><option value="a">Amarillo</option><option value="r">Rojo</option></select></label>
+</div>
+<div class="tools">
+<label>Tolerancia amarillo (%)<input id="tolP" type="number" min="0" step="0.5" value="2" style="width:90px"></label>
+<label>Tolerancia amarillo (unidades)<input id="tolU" type="number" min="0" step="0.5" value="2" style="width:90px"></label>
+<button class="btn" onclick="dlView(false)">Descargar hoja de conteo (CSV)</button>
+<button class="btn acc" onclick="dlView(true)">Descargar cotejo cargado (CSV)</button>
+<button class="btn ghost" onclick="window.print()">Imprimir</button>
+<button class="btn ghost" onclick="cargar(true)">Actualizar desde la planilla</button>
+</div>
+<div id="avance"></div>
+<div class="pager" id="pagerTop"></div>
+<div class="wrap" style="max-height:70vh"><table class="tbl" id="tbl"><thead><tr><th>#</th><th>Día</th><th>Código</th><th>Producto</th><th>Rubro</th><th>UdM</th><th class="num">Saldo teórico</th><th class="num">Saldo Odoo actual</th><th class="num">Otras ubic.</th><th class="num">Vend. período</th><th>Clase</th><th>Contado</th><th class="num">Dif.</th><th>Semáforo</th><th>Observaciones</th><th>Contó</th></tr></thead><tbody id="tb"></tbody></table></div>
+<div class="pager" id="pagerBot"></div>
+<p style="font-size:12.5px;color:var(--mut)">Antes de contar cada día, actualizá los saldos de Odoo desde el menú de la planilla (Inventario Coraza &gt; 4): el saldo puede haber cambiado por ventas o ingresos posteriores a la foto.</p>
+</section>
+
+<section id="protocolo"><h2>5. Protocolo de cotejo y reconteo</h2>
+<h3>Registro en Odoo 18</h3>
+<ol><li><i>Inventario → Operaciones → Ajustes de inventario.</i> Filtrar por el producto o el rubro del día.</li>
+<li>Cargar la <b>Cantidad contada</b>. Odoo calcula la <b>Diferencia</b> contra la cantidad a mano.</li>
+<li>Usar como referencia del ajuste: <b>Conteo previo – Inv. General 20/11/2026</b>.</li>
+<li><b>No aplicar</b> el ajuste hasta cerrar el reconteo de los casos rojos.</li></ol>
+<h3>Semáforo de desvíos (umbrales propuestos)</h3>
+<div class="wrap"><table class="tbl"><thead><tr><th>Color</th><th>Criterio</th><th>Acción</th></tr></thead><tbody>
+<tr><td><span class="sem v"></span><b>Verde</b></td><td>Diferencia = 0</td><td>Se valida; sin impacto.</td></tr>
+<tr><td><span class="sem a"></span><b>Amarillo</b></td><td>Desvío leve: hasta ±2 % del saldo teórico, o hasta 2 unidades (configurable)</td><td>Se corrige en el día con aprobación del Jefe de Depósito. Se registra la causa.</td></tr>
+<tr><td><span class="sem r"></span><b>Rojo</b></td><td>Desvío mayor, o cualquier mercadería hallada en un SKU con saldo teórico ≤ 0</td><td><b>Reconteo express dentro de las 24 hs</b> por otra persona. Recién después se valida el ajuste, con aprobación de Dirección.</td></tr>
+</tbody></table></div>
+<h3>Controles antes de aprobar un ajuste</h3>
+<ul><li>Revisar movimientos pendientes del producto (transferencias sin validar, entregas, recepciones).</li>
+<li>Revisar ventas facturadas sin entrega, unidades de medida y conversiones.</li>
+<li>Revisar si el SKU tiene stock en otras ubicaciones (columna «Otras ubic.»).</li>
+<li>Descontar los movimientos ocurridos entre el conteo y el cotejo antes de calificar el desvío.</li>
+<li>Registrar la causa raíz: venta sin descontar, ingreso sin registrar, error de unidad de medida, mercadería mal ubicada, transferencia entre depósitos sin registrar, rotura o merma, error de conteo, otra.</li></ul>
+<h3>Regla para la Etapa 3 (paquetes completos rotulados)</h3>
+<ul><li>Cada paquete o bulto cerrado contado se rotula con una etiqueta de conteo: SKU, cantidad, fecha, quién contó.</li>
+<li>Si se abre o se retira un paquete rotulado, se retira la etiqueta y se registra en una planilla de movimientos.</li>
+<li>El Día 10 se cuentan solo las unidades sueltas y se verifican los paquetes rotulados que siguen cerrados. Cantidad final = paquetes rotulados vigentes + sueltos contados.</li></ul>
+<h3>Indicadores diarios para Dirección</h3>
+<p>SKU validados, % verde / amarillo / rojo, causas raíz más frecuentes, cantidad de SKU y de unidades ajustadas (neto y bruto) y rojos pendientes de reconteo.</p>
+</section>
+
+<section id="general"><h2>6. Plan de ejecución del Inventario General (Día 10 · 20/11/2026)</h2>
+<h3>Antes del cierre (Días 8 y 9)</h3>
+<ul><li>Validar o cancelar todas las transferencias abiertas (entregas, recepciones e internas) y confirmar con Ventas y Compras que no queden ingresos pendientes.</li>
+<li>Cerrar los rojos de las etapas 1 a 3 o dejarlos documentados.</li>
+<li>Imprimir hojas de conteo por zona desde Odoo (Ajustes de inventario filtrados por la ubicación y por rubro), sin Ferretería.</li>
+<li>Revisar los productos sin subcategoría (cuelgan de "All") para confirmar que ninguno sea de Ferretería.</li>
+<li>Definir una zona de cuarentena para mercadería sin identificar y rotular zonas y pasillos.</li>
+<li>Registrar las transferencias en tránsito desde y hacia la ubicación del inventario.</li></ul>
+<h3>Congelamiento transaccional temporal</h3>
+<p>Odoo no trae un congelamiento de stock nativo; se implementa por procedimiento, con aprobación de Dirección:</p>
+<ol><li>Horario de corte comunicado a clientes y proveedores. Sin despachos ni recepciones durante la ventana.</li>
+<li>Dejar la validación de transferencias en un único usuario durante la ventana.</li>
+<li>Definir con Administración qué se permite en Ventas y facturación (por ejemplo cotizar y reservar sí, entregar no).</li>
+<li>Todo movimiento de excepción se anota en planilla firmada y se carga después del cierre.</li></ol>
+<h3>Dimensionamiento de cuadrillas por zona</h3>
+<p>Calculado sobre los SKU con saldo distinto de cero, agrupados por zona de rubros. Parejas y productividad son editables (no se guardan).</p>
+<div class="tools"><label>Productividad (SKU por hora por pareja)<input id="prod" type="number" min="1" step="1" value="12" style="width:110px"></label></div>
+<div class="wrap"><table class="tbl"><thead><tr><th>Zona (rubros)</th><th class="num">SKU con saldo</th><th class="num">Parejas de conteo</th><th class="num">Horas estimadas (conteo 1)</th></tr></thead><tbody id="whbody"></tbody></table></div>
+<p style="font-size:13px;color:var(--mut)">La productividad es una hipótesis (10 a 15 SKU por hora por pareja) y se calibra con los datos reales de los Días 1 a 6. Auditores independientes hacen doble conteo ciego de los rojos.</p>
+<h3>Secuencia operativa del Día 10</h3>
+<div class="wrap"><table class="tbl"><thead><tr><th>Franja</th><th>Actividad</th></tr></thead><tbody>
+<tr><td>T-0</td><td>Corte, congelamiento y reunión de arranque con cuadrillas.</td></tr>
+<tr><td>T+0 a T+12 hs</td><td>Conteo 1 (ciego) por zona, empezando por los SKU de rotación (RG y RC).</td></tr>
+<tr><td>T+12 a T+18 hs</td><td>Carga en Odoo y cotejo automático contra el sistema.</td></tr>
+<tr><td>T+18 a T+24 hs</td><td>Reconteo (doble ciego) de rojos, y barrido de ubicaciones para detectar mercadería en SKU con saldo cero.</td></tr>
+<tr><td>T+24 a T+36 hs (si se define 48 hs)</td><td>Segundo ciclo de reconteo, causas raíz y cierre de pendientes.</td></tr>
+<tr><td>Cierre</td><td>Consolidación, informe y firma del acta.</td></tr></tbody></table></div>
+<h3>Consolidación y ajuste masivo</h3>
+<ol><li>Aplicar los ajustes de inventario (botón <b>Aplicar</b>) por lotes y por rubro.</li>
+<li>Informe de ajuste neto y bruto por rubro, con las causas raíz principales.</li>
+<li>Firma del acta por Dirección, Auditoría y Jefe de Depósito.</li>
+<li>Levantar el congelamiento y reabrir operaciones.</li>
+<li>Plan de acción por causa raíz: capacitación, controles de registro y corrección de unidades de medida.</li></ol>
+</section>
+
+<section id="decisiones"><h2>7. Decisiones y comentarios de Dirección</h2>
+<p>Cada punto tiene una propuesta, un estado y un espacio de comentarios. Lo que se escribe se guarda en la hoja «Decisiones» de la planilla y lo ve todo el que abra este documento.</p>
+<div class="chips" id="dsum"></div>
+<div class="dcards" id="dlist"></div>
+<h3>Comentarios generales de la reunión</h3>
+<textarea id="gcom" style="width:100%;min-height:90px" placeholder="Anotaciones, acuerdos, responsables y fechas..."></textarea>
+<p><button class="btn" onclick="dlDecisiones()">Descargar decisiones y comentarios (TXT)</button></p>
+</section>
+
+<section id="supuestos"><h2>8. Datos y supuestos</h2>
+<ol>
+<li><b>Fuente:</b> Odoo (<code>product.product</code>, <code>stock.quant</code>, <code>stock.move</code>, <code>categ_id</code>), foto del <span data-s="snap">—</span>, volcada en la planilla de Google Sheets.</li>
+<li><b>Rotación:</b> solo se miden salidas hacia clientes desde la ubicación del inventario. Los consumos por Manufactura o Taller no están incluidos.</li>
+<li><b>Volumen:</b> inferido por rubro porque el campo volumen no está cargado.</li>
+<li><b>Ferretería:</b> los ejemplos de discos y electrodos pertenecen a ese rubro y quedan excluidos.</li>
+<li><b>Productos sin subcategoría:</b> unos <span data-s="sinsub"></span> del universo cuelgan directo de "All". Puede haber Ferretería mal categorizada.</li>
+<li><b>Alcance físico:</b> solo <span data-s="ubic">RUT3/Existencias</span>. Quedan fuera los demás depósitos y las ubicaciones RUT3/Entrada y RUT3/Salida.</li>
+<li><b>Semáforo, productividad y calendario:</b> son propuestas para validar en la reunión.</li></ol>
+</section>
+
+<section id="firmas"><h2>9. Aprobación</h2>
+<div class="wrap"><table class="tbl"><thead><tr><th>Dirección</th><th>Auditoría de Inventarios</th><th>Jefe de Depósito</th></tr></thead><tbody>
+<tr><td style="height:80px">Firma:</td><td>Firma:</td><td>Firma:</td></tr>
+<tr><td>Aclaración:</td><td>Aclaración:</td><td>Aclaración:</td></tr>
+<tr><td>Fecha: ___/___/2026</td><td>Fecha: ___/___/2026</td><td>Fecha: ___/___/2026</td></tr></tbody></table></div>
+</section>
+</main></div>
+<button class="btn menu-btn" onclick="document.getElementById('nav').classList.toggle('open')">Menú</button>
+<div id="sync">Conectando...</div>
+
+<script>
+/* =====================================================================
+   >>> PEGAR ACÁ LOS DOS DATOS DEL APPS SCRIPT (entre las comillas) <<<
+   ===================================================================== */
+var APPSCRIPT_URL   = 'https://script.google.com/macros/s/AKfycbxLj6OI6HuAjbgYAd0PfiHcAbDuHCFAcfvjVcWIXRCl86-V0DO22GV5MENf-cZjrpWb/exec';   // URL de la aplicación web, termina en /exec
+var APPSCRIPT_TOKEN = 'bfe30229d1bd4e529e00';   // clave de acceso (la muestra la función iniciar())
+/* ===================================================================== */
+
+var NL = String.fromCharCode(10), BOM = String.fromCharCode(65279);
+var DAYLBL = {1:'Mié 11/11',2:'Jue 12/11',3:'Vie 13/11',4:'Sáb 14/11',5:'Dom 15/11',6:'Lun 16/11'};
+var GL = {NEG:'Negativo',ZV:'Cero con ventas',Z0:'Cero sin ventas',INM:'Inmovilizado',RG:'Rotación gran volumen',RC:'Rotación volumen chico'};
+var SEMTXT = {v:'Verde',a:'Amarillo',r:'Rojo','':''};
+var DATA = [], BYID = {}, DEC = [], S = {}, CFG = {}, SNAP = '';
+var COT = {}, REMOTE = {}, DST = {}, REMDEC = {}, GREM = '';
+var PAGE = 0, PS = 100, CUR = [], PAR = [2,2,3,1], TIMER = null, DTIMER = null, GTIMER = null, LOADING = false;
+
+function stageOf(d){return d<=2?1:(d<=4?2:3);}
+function nf(x){return Number(x).toLocaleString('es-AR',{maximumFractionDigits:2});}
+function esc(s){return String(s===null||s===undefined?'':s).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;');}
+function setSync(t,c){var e=document.getElementById('sync');e.textContent=t;e.style.color=c||'#1c2733';}
+
+/* ---------- API ---------- */
+function api(action,extra){
+  var body={action:action,token:APPSCRIPT_TOKEN};
+  if(extra){for(var k in extra){body[k]=extra[k];}}
+  return fetch(APPSCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)})
+    .then(function(r){return r.json();})
+    .then(function(j){if(j&&j.error){throw new Error(j.error);}return j;});
+}
+function quien(){
+  var q='';try{q=localStorage.getItem('coraza_quien')||'';}catch(e){}
+  if(!q){q=(window.prompt('¿Quién carga los datos? (nombre para registrar quién contó)')||'').trim();try{localStorage.setItem('coraza_quien',q);}catch(e){}}
+  return q;
+}
+
+/* ---------- Carga ---------- */
+function cargar(manual){
+  if(LOADING)return;
+  if(!APPSCRIPT_URL||!APPSCRIPT_TOKEN){
+    var b=document.getElementById('banner');b.style.display='block';
+    b.innerHTML='<b>Falta conectar con el Apps Script.</b> Abrí este archivo y pegá la URL y la clave en las dos líneas marcadas al inicio del bloque &lt;script&gt; (APPSCRIPT_URL y APPSCRIPT_TOKEN).';
+    setSync('Sin conexión (falta configurar)','#c62828');return;
+  }
+  LOADING=true;setSync(manual?'Actualizando...':'Cargando datos...');
+  api('datos').then(function(d){
+    LOADING=false;aplicar(d,!!manual);document.getElementById('banner').style.display='none';
+    setSync('Sincronizado '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),'#1f8a4c');
+  }).catch(function(e){LOADING=false;setSync('Error: '+e.message,'#c62828');
+    var b=document.getElementById('banner');b.style.display='block';b.innerHTML='<b>No se pudo leer la planilla.</b> '+esc(e.message)+'. Revisá la URL, la clave y que la implementación esté en «Cualquier persona».';});
+}
+function focusedId(){var a=document.activeElement;if(!a||!a.closest)return null;var tr=a.closest('tr[data-id]');return tr?tr.getAttribute('data-id'):null;}
+
+function aplicar(d,force){
+  var first=DATA.length===0;
+  CFG=d.cfg||{};SNAP=d.stamp||'';
+  if(first){
+    DATA=d.rows.map(function(r){return {day:r[0],o:r[1],c:r[2],n:r[3],k:r[4],u:r[5],g:r[6],q:Number(r[7])||0,x:Number(r[8])||0,v:Number(r[9])||0,a:(r[10]===''||r[10]===null)?'':Number(r[10]),id:String(r[15])};});
+    DATA.forEach(function(r){BYID[r.id]=r;});
+    if(CFG.tolP!==undefined){document.getElementById('tolP').value=CFG.tolP;}
+    if(CFG.tolU!==undefined){document.getElementById('tolU').value=CFG.tolU;}
+    if(CFG.prod){document.getElementById('prod').value=CFG.prod;}
+    calcStats();initFilters();buildCrono();
+  } else {
+    d.rows.forEach(function(r){var x=BYID[String(r[15])];if(x){x.a=(r[10]===''||r[10]===null)?'':Number(r[10]);}});
+  }
+  var fid=focusedId();
+  d.rows.forEach(function(r){
+    var id=String(r[15]),c=(r[11]===''||r[11]===null)?'':String(r[11]),o=String(r[12]||''),qn=String(r[13]||''),fh=String(r[14]||'');
+    var sig=c+'|'+o;
+    var loc=COT[id]?(COT[id].c+'|'+COT[id].o):'|';
+    var rem=REMOTE[id]||'|';
+    var localDirty=(loc!==rem);
+    if(first||force||(!localDirty&&id!==fid)){
+      if(sig==='|'){delete COT[id];}else{COT[id]={c:c,o:o,q:qn,f:fh};}
+    } else if(COT[id]){COT[id].q=qn;COT[id].f=fh;}
+    REMOTE[id]=sig;
+  });
+  DEC=d.dec||[];
+  DEC.forEach(function(x,i){var rem=(x.e||'Pendiente')+'|'+(x.m||'');var loc=DST[i]?(DST[i].e+'|'+DST[i].m):rem;
+    if(first||force||loc===(REMDEC[i]||rem)){DST[i]={e:x.e||'Pendiente',m:x.m||''};}REMDEC[i]=rem;});
+  var g=document.getElementById('gcom');
+  if(first||force||g.value===GREM){if(document.activeElement!==g){g.value=d.gcom||'';}}
+  GREM=d.gcom||'';
+  fillStats();renderDec();calcWh();render(first);avanceCrono();
+}
+
+/* ---------- Estadísticas ---------- */
+function zoneOf(k){if(/CHAPAS|CAÑOS|PERFILES DE HIERRO|PERF\. CONFORM|ACEROS|ALUMINIO/.test(k))return 0;if(/TECHOS|CONSTRUCCION|CONDUCCION/.test(k))return 1;if(/HERRERIA|MAQUINAS|DESP|TEJIDOS|ACCESORIOS/.test(k))return 2;return 3;}
+var ZN=[{n:'Acero y aluminio (Chapas, Caños, Perfiles de hierro, Perfiles conformados, Aceros especiales, Aluminio)',c:0},{n:'Techos, Construcción, Construcción en seco y Conducción',c:0},{n:'Herrería, Máquinas y soldadoras, Desp. y decorativos, Tejidos y alambres',c:0},{n:'Otros (Insumos Coraza y productos sin subcategoría)',c:0}];
+function calcStats(){
+  S={total:DATA.length,neg:0,zv:0,z0:0,inm:0,rg:0,rc:0,d1:0,d2:0,d3:0,d4:0,d5:0,d6:0,sinsub:0,zotros:0};
+  ZN.forEach(function(z){z.c=0;});
+  DATA.forEach(function(r){S[r.g.toLowerCase()]++;S['d'+r.day]++;if(r.k==='SIN SUBCATEGORIA')S.sinsub++;if(r.q===0&&r.x>0)S.zotros++;if(r.q!==0)ZN[zoneOf(r.k)].c++;});
+  S.e1=S.neg+S.zv+S.z0;S.e3=S.rg+S.rc;S.z0v=S.zv+S.z0;
+}
+function fillStats(){
+  var m={ubic:CFG.ubic||'RUT3/Existencias',excl:CFG.excl||'FERRETERIA',dias:CFG.dias||180,snap:SNAP||'—'};
+  Array.prototype.forEach.call(document.querySelectorAll('[data-s]'),function(el){var k=el.getAttribute('data-s');var v=(m[k]!==undefined)?m[k]:S[k];if(v!==undefined){el.textContent=(typeof v==='number'&&m[k]===undefined)?nf(v):v;}});
+}
+
+/* ---------- Cronograma ---------- */
+var CRON_TXT=['Validar saldos negativos, ceros con ventas y primera mitad de los ceros restantes.','Segunda mitad de los ceros. Reconteo de rojos del Día 1.','Contar inmovilizados, de mayor a menor cantidad. Reconteo de rojos del Día 2.','Resto de los inmovilizados. Reconteo de rojos del Día 3.','Rotación: paquetes completos y mayor volumen de acero y aluminio. Rotulado de lo contado.','Rotación: paquetes completos y mayor volumen del resto de los rubros, más los de volumen chico.'];
+function buildCrono(){
+  var h='';
+  for(var d=1;d<=6;d++){h+='<tr><td><b>'+d+'</b></td><td>'+DAYLBL[d]+'</td><td>'+stageOf(d)+'</td><td>'+CRON_TXT[d-1]+'</td><td class="num">'+nf(S['d'+d])+'</td><td class="num" id="cd'+d+'">0</td><td><button class="btn sm ghost" onclick="verDia('+d+')">Ver</button> <button class="btn sm" onclick="dl('+d+')">CSV</button></td></tr>';}
+  h+='<tr><td><b>7</b></td><td>Mar 17/11</td><td>Cierre</td><td>Reconteo de rojos de las etapas 1 y 2. Análisis de causas raíz. Aplicar ajustes aprobados.</td><td class="num">—</td><td class="num">—</td><td>Se arma con los rojos del cotejo</td></tr>';
+  h+='<tr><td><b>8</b></td><td>Mié 18/11</td><td>Cierre</td><td>Reconteo de rojos de la Etapa 3. Control de movimientos posteriores al conteo de paquetes. Ajustes aprobados.</td><td class="num">—</td><td class="num">—</td><td>Se arma con los rojos del cotejo</td></tr>';
+  h+='<tr><td><b>9</b></td><td>Jue 19/11</td><td>Pre-cierre</td><td>Cierre de pendientes, transferencias abiertas, impresión de hojas por zona, reunión con cuadrillas, aviso a clientes y proveedores.</td><td class="num">—</td><td class="num">—</td><td>—</td></tr>';
+  h+='<tr><td><b>10</b></td><td>Vie 20/11</td><td>Total</td><td><b>INVENTARIO GENERAL</b> (24 a 48 hs). Ver sección 6.</td><td class="num">'+nf(S.total)+'</td><td class="num">—</td><td><button class="btn sm" onclick="dlAll()">CSV</button></td></tr>';
+  document.getElementById('crono').innerHTML=h;
+}
+function avanceCrono(){
+  var c={1:0,2:0,3:0,4:0,5:0,6:0};
+  DATA.forEach(function(r){var x=COT[r.id];if(x&&x.c!==''&&x.c!==undefined&&!isNaN(parseFloat(x.c)))c[r.day]++;});
+  for(var d=1;d<=6;d++){var e=document.getElementById('cd'+d);if(e)e.textContent=nf(c[d])+' ('+(S['d'+d]?Math.round(c[d]*100/S['d'+d]):0)+' %)';}
+}
+
+/* ---------- CSV ---------- */
+function cc(v){v=(v===null||v===undefined)?'':String(v);if(v.indexOf(';')>=0||v.indexOf('"')>=0||v.indexOf(NL)>=0){v='"'+v.split('"').join('""')+'"';}return v;}
+function cn(x){return String(x).split('.').join(',');}
+function saveFile(name,text,mime){var b=new Blob([BOM+text],{type:mime||'text/csv;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);}
+function tolP(){return parseFloat(document.getElementById('tolP').value)||0;}
+function tolU(){return parseFloat(document.getElementById('tolU').value)||0;}
+function baseOf(r){return r.a===''?r.q:r.a;}
+function semOf(r){var c=COT[r.id];if(!c||c.c===''||c.c===undefined)return '';var cnt=parseFloat(c.c);if(isNaN(cnt))return '';var b=baseOf(r);var dif=Math.round((cnt-b)*1000)/1000;if(dif===0)return 'v';if(b<=0)return 'r';var tol=Math.max(tolP()/100*Math.abs(b),tolU());return Math.abs(dif)<=tol?'a':'r';}
+function csvFor(rows,withCot){
+  var h=['Día','Fecha','Etapa','Orden','Código','Producto','Rubro','UdM','Saldo teórico','Saldo Odoo actual','Otras ubicaciones (informativo)','Ventas período (cant.)','Clasificación','Cantidad contada','Diferencia','Semáforo','Observaciones','Contó','Fecha y hora'];
+  var out=[h.join(';')];
+  rows.forEach(function(r){var c=withCot?(COT[r.id]||{}):{};var cnt=(c.c===undefined||c.c==='')?'':parseFloat(c.c);var dif=(cnt==='')?'':Math.round((cnt-baseOf(r))*1000)/1000;
+    var line=[r.day,DAYLBL[r.day],stageOf(r.day),r.o,r.c,r.n,r.k,r.u,cn(r.q),r.a===''?'':cn(r.a),cn(r.x),cn(r.v),GL[r.g],cnt===''?'':cn(cnt),dif===''?'':cn(dif),withCot?SEMTXT[semOf(r)]:'',withCot?(c.o||''):'',withCot?(c.q||''):'',withCot?(c.f||''):''];
+    out.push(line.map(cc).join(';'));});
+  return out.join(NL);
+}
+function rowsDay(d){return DATA.filter(function(r){return r.day===d;});}
+function rowsStage(s){return DATA.filter(function(r){return stageOf(r.day)===s;});}
+function dl(d){saveFile('Coraza_Dia'+d+'_conteo.csv',csvFor(rowsDay(d),false));}
+function dlStage(s){saveFile('Coraza_Etapa'+s+'_conteo.csv',csvFor(rowsStage(s),false));}
+function dlAll(){saveFile('Coraza_Universo_Inventario_General.csv',csvFor(DATA,false));}
+
+/* ---------- Listados ---------- */
+function initFilters(){
+  var v=document.getElementById('fView');
+  var o=[['all','Todo el universo ('+nf(S.total)+')'],['e1','Etapa 1 · Días 1 y 2 ('+nf(S.e1)+')'],['e2','Etapa 2 · Días 3 y 4 ('+nf(S.inm)+')'],['e3','Etapa 3 · Días 5 y 6 ('+nf(S.e3)+')']];
+  for(var d=1;d<=6;d++){o.push(['d'+d,'Día '+d+' · '+DAYLBL[d]+' ('+nf(S['d'+d])+')']);}
+  v.innerHTML=o.map(function(x){return '<option value="'+x[0]+'">'+x[1]+'</option>';}).join('');v.value='d1';
+  var ru={};DATA.forEach(function(r){ru[r.k]=(ru[r.k]||0)+1;});
+  document.getElementById('fRub').innerHTML='<option value="">Todos</option>'+Object.keys(ru).sort().map(function(k){return '<option value="'+esc(k)+'">'+esc(k)+' ('+ru[k]+')</option>';}).join('');
+}
+function viewRows(){var v=document.getElementById('fView').value;if(v==='all')return DATA;if(v==='e1')return rowsStage(1);if(v==='e2')return rowsStage(2);if(v==='e3')return rowsStage(3);return rowsDay(parseInt(v.slice(1),10));}
+function hasCnt(id){var c=COT[id];return !!(c&&c.c!==''&&c.c!==undefined&&!isNaN(parseFloat(c.c)));}
+function filtered(){
+  var q=document.getElementById('fQ').value.toLowerCase().trim(),rub=document.getElementById('fRub').value,g=document.getElementById('fGrp').value,dp=document.getElementById('fDep').value,es=document.getElementById('fEst').value;
+  return viewRows().filter(function(r){
+    if(q&&(r.c+' '+r.n).toLowerCase().indexOf(q)<0)return false;
+    if(rub&&r.k!==rub)return false;if(g&&r.g!==g)return false;
+    if(dp!==''&&!(r.x>0))return false;
+    if(es){var s=semOf(r),c=hasCnt(r.id);if(es==='pend'&&c)return false;if(es==='cont'&&!c)return false;if((es==='v'||es==='a'||es==='r')&&s!==es)return false;}
+    return true;});
+}
+function rowHtml(r){
+  var c=COT[r.id]||{},s=semOf(r),dif='';
+  if(hasCnt(r.id)){dif=Math.round((parseFloat(c.c)-baseOf(r))*1000)/1000;}
+  var h='<tr data-id="'+r.id+'"><td class="num">'+r.o+'</td><td class="num">'+r.day+'</td><td>'+esc(r.c||'—')+'</td><td>'+esc(r.n)+'</td><td>'+esc(r.k)+'</td><td>'+esc(r.u)+'</td><td class="num"><b'+(r.q<0?' style="color:#c62828"':'')+'>'+nf(r.q)+'</b></td>';
+  h+='<td class="num">'+(r.a===''?'<span style="color:#b8c2cc">·</span>':nf(r.a))+'</td><td class="num" style="color:#5d6b7a">'+(r.x===0?'<span style="color:#b8c2cc">·</span>':nf(r.x))+'</td>';
+  h+='<td class="num">'+(r.v?nf(r.v):'<span style="color:#b8c2cc">0</span>')+'</td><td><span class="badge b-'+r.g+'" title="'+GL[r.g]+'">'+r.g+'</span></td>';
+  h+='<td><input class="cell" type="number" step="any" data-f="c" value="'+(c.c===undefined?'':esc(c.c))+'"></td><td class="num" data-x="dif">'+(dif===''?'':nf(dif))+'</td><td data-x="sem">'+(s?'<span class="sem '+s+'"></span>'+SEMTXT[s]:'')+'</td>';
+  h+='<td><input class="cell" style="width:170px;text-align:left" type="text" data-f="o" value="'+esc(c.o||'')+'"></td><td data-x="q" style="font-size:12px;color:#5d6b7a">'+esc(c.q||'')+(c.f?'<br>'+esc(c.f):'')+'</td></tr>';
+  return h;
+}
+function render(resetPage){
+  if(resetPage)PAGE=0;
+  CUR=filtered();var pages=Math.max(1,Math.ceil(CUR.length/PS));if(PAGE>=pages)PAGE=pages-1;
+  var a=PAGE*PS,b=Math.min(CUR.length,a+PS);
+  document.getElementById('tb').innerHTML=CUR.slice(a,b).map(rowHtml).join('')||'<tr><td colspan="16" style="padding:18px;color:#5d6b7a">No hay SKU con esos filtros.</td></tr>';
+  var pg='<button class="btn sm ghost" onclick="goPage(-1)">&larr; Anterior</button><span>Mostrando '+(CUR.length?a+1:0)+' a '+b+' de '+nf(CUR.length)+' SKU · página '+(PAGE+1)+' de '+pages+'</span><button class="btn sm ghost" onclick="goPage(1)">Siguiente &rarr;</button>';
+  document.getElementById('pagerTop').innerHTML=pg;document.getElementById('pagerBot').innerHTML=pg;avance();
+}
+function goPage(d){PAGE=Math.max(0,PAGE+d);render(false);var el=document.getElementById('listados');if(el)el.scrollIntoView();}
+function avance(){
+  var n=CUR.length,cont=0,v=0,a=0,r=0;
+  CUR.forEach(function(x){if(hasCnt(x.id)){cont++;var s=semOf(x);if(s==='v')v++;else if(s==='a')a++;else if(s==='r')r++;}});
+  var p=function(x){return n?(x*100/n):0;};
+  document.getElementById('avance').innerHTML='<div class="chips"><span class="chip"><b>'+nf(n)+'</b> SKU en esta vista</span><span class="chip">Contados: <b>'+nf(cont)+'</b> ('+nf(p(cont))+' %)</span><span class="chip"><span class="sem v"></span>Verde <b>'+v+'</b></span><span class="chip"><span class="sem a"></span>Amarillo <b>'+a+'</b></span><span class="chip"><span class="sem r"></span>Rojo <b>'+r+'</b></span></div><div class="bar"><i style="width:'+p(v)+'%;background:#1f8a4c"></i><i style="width:'+p(a)+'%;background:#d99a00"></i><i style="width:'+p(r)+'%;background:#c62828"></i></div>';
+}
+document.getElementById('tb').addEventListener('input',function(e){
+  var t=e.target,tr=t.closest('tr');if(!tr)return;var id=tr.getAttribute('data-id'),f=t.getAttribute('data-f');if(!f)return;
+  COT[id]=COT[id]||{c:'',o:''};COT[id][f]=t.value;
+  if(f==='c'){var r=BYID[id];var s=semOf(r);var cnt=parseFloat(t.value);tr.querySelector('[data-x=dif]').textContent=isNaN(cnt)?'':nf(Math.round((cnt-baseOf(r))*1000)/1000);tr.querySelector('[data-x=sem]').innerHTML=s?'<span class="sem '+s+'"></span>'+SEMTXT[s]:'';avance();avanceCrono();}
+  pendiente();
+});
+['fView','fRub','fGrp','fDep','fEst'].forEach(function(id){document.getElementById(id).addEventListener('change',function(){render(true);});});
+document.getElementById('fQ').addEventListener('input',function(){render(true);});
+['tolP','tolU'].forEach(function(id){document.getElementById(id).addEventListener('change',function(){render(false);avanceCrono();});});
+function verDia(d){document.getElementById('fView').value='d'+d;['fRub','fGrp','fDep','fEst'].forEach(function(i){document.getElementById(i).value='';});document.getElementById('fQ').value='';render(true);document.getElementById('listados').scrollIntoView();}
+function dlView(w){var v=document.getElementById('fView').value;saveFile('Coraza_'+(w?'cotejo_':'hoja_conteo_')+v+'.csv',csvFor(CUR,w));}
+
+/* ---------- Guardado en la planilla ---------- */
+function pendiente(){setSync('Guardando...');clearTimeout(TIMER);TIMER=setTimeout(guardarCot,1200);}
+function guardarCot(){
+  var ch={},n=0,id;
+  for(id in COT){var sig=(COT[id].c===undefined?'':COT[id].c)+'|'+(COT[id].o||'');if(sig!==(REMOTE[id]||'|')){ch[id]={c:COT[id].c===undefined?'':COT[id].c,o:COT[id].o||''};n++;}}
+  for(id in REMOTE){if(!COT[id]&&REMOTE[id]!=='|'){ch[id]={c:'',o:''};n++;}}
+  if(!n){setSync('Sincronizado','#1f8a4c');return;}
+  var nm=quien();
+  api('guardar',{cot:ch,quien:nm}).then(function(){
+    for(var k in ch){REMOTE[k]=ch[k].c+'|'+ch[k].o;if(ch[k].c===''&&ch[k].o===''){delete COT[k];}}
+    setSync('Guardado '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),'#1f8a4c');
+  }).catch(function(e){setSync('No se pudo guardar: '+e.message+' (reintenta solo)','#c62828');clearTimeout(TIMER);TIMER=setTimeout(guardarCot,8000);});
+}
+
+/* ---------- Cuadrillas ---------- */
+function calcWh(){
+  var prod=parseFloat(document.getElementById('prod').value)||12,body='',tp=0,mx=0,ts=0;
+  ZN.forEach(function(z,i){var p=PAR[i];tp+=p;ts+=z.c;var h=p>0?z.c/(prod*p):0;if(h>mx)mx=h;body+='<tr><td>'+z.n+'</td><td class="num">'+nf(z.c)+'</td><td class="num"><input class="cell" type="number" min="0" step="1" value="'+p+'" data-w="'+i+'" style="width:70px"></td><td class="num">'+nf(Math.round(h*10)/10)+' hs</td></tr>';});
+  body+='<tr><td><b>Total</b></td><td class="num"><b>'+nf(ts)+'</b></td><td class="num"><b>'+tp+'</b></td><td class="num"><b>'+nf(Math.round(mx*10)/10)+' hs</b> (zona más larga)</td></tr>';
+  document.getElementById('whbody').innerHTML=body;
+}
+document.getElementById('whbody').addEventListener('change',function(e){var w=e.target.getAttribute('data-w');if(w===null)return;PAR[parseInt(w,10)]=parseFloat(e.target.value)||0;calcWh();});
+document.getElementById('prod').addEventListener('change',calcWh);
+
+/* ---------- Decisiones ---------- */
+function renderDec(){
+  var h='',c={Pendiente:0,Aprobado:0,'A discutir':0,Rechazado:0};
+  DEC.forEach(function(d,i){var s=DST[i]||{e:'Pendiente',m:''};c[s.e]=(c[s.e]||0)+1;
+    function op(v){return '<option value="'+v+'"'+(s.e===v?' selected':'')+'>'+v+'</option>';}
+    h+='<div class="dcard '+(s.e==='Aprobado'?'ok':(s.e==='Rechazado'?'no':''))+'" data-i="'+i+'"><h4>'+esc(d.id)+'. '+esc(d.t)+'</h4><div class="ctx">'+esc(d.c)+'</div><div class="prop"><b>Propuesta:</b> '+esc(d.p)+'</div><div class="row"><select data-k="e">'+op('Pendiente')+op('Aprobado')+op('A discutir')+op('Rechazado')+'</select><textarea data-k="m" placeholder="Comentario de Dirección...">'+esc(s.m)+'</textarea></div></div>';});
+  var act=document.activeElement,keep=(act&&act.getAttribute&&act.getAttribute('data-k')==='m')?act.closest('.dcard').getAttribute('data-i'):null;
+  if(keep===null){document.getElementById('dlist').innerHTML=h;}
+  document.getElementById('dsum').innerHTML='<span class="chip">Total: <b>'+DEC.length+'</b></span><span class="chip">Aprobadas: <b>'+(c.Aprobado||0)+'</b></span><span class="chip">A discutir: <b>'+(c['A discutir']||0)+'</b></span><span class="chip">Rechazadas: <b>'+(c.Rechazado||0)+'</b></span><span class="chip">Pendientes: <b>'+(c.Pendiente||0)+'</b></span>';
+}
+function guardarDec(){
+  var ch={},n=0;
+  DEC.forEach(function(d,i){var s=DST[i];if(!s)return;var sig=s.e+'|'+s.m;if(sig!==REMDEC[i]){ch[i]={e:s.e,m:s.m};n++;}});
+  if(!n)return;
+  api('guardar',{dec:ch,quien:quien()}).then(function(){for(var k in ch){REMDEC[k]=ch[k].e+'|'+ch[k].m;}setSync('Decisiones guardadas','#1f8a4c');})
+   .catch(function(e){setSync('No se pudo guardar: '+e.message,'#c62828');clearTimeout(DTIMER);DTIMER=setTimeout(guardarDec,8000);});
+}
+document.getElementById('dlist').addEventListener('change',function(e){var k=e.target.getAttribute('data-k');if(k!=='e')return;var i=e.target.closest('.dcard').getAttribute('data-i');DST[i]=DST[i]||{e:'Pendiente',m:''};DST[i].e=e.target.value;renderDec();setSync('Guardando...');clearTimeout(DTIMER);DTIMER=setTimeout(guardarDec,600);});
+document.getElementById('dlist').addEventListener('input',function(e){var k=e.target.getAttribute('data-k');if(k!=='m')return;var i=e.target.closest('.dcard').getAttribute('data-i');DST[i]=DST[i]||{e:'Pendiente',m:''};DST[i].m=e.target.value;setSync('Guardando...');clearTimeout(DTIMER);DTIMER=setTimeout(guardarDec,1500);});
+document.getElementById('gcom').addEventListener('input',function(){setSync('Guardando...');clearTimeout(GTIMER);GTIMER=setTimeout(function(){var v=document.getElementById('gcom').value;api('guardar',{gcom:v}).then(function(){GREM=v;setSync('Comentarios guardados','#1f8a4c');}).catch(function(e){setSync('No se pudo guardar: '+e.message,'#c62828');});},1500);});
+function dlDecisiones(){var t=['DECISIONES Y COMENTARIOS DE DIRECCIÓN','Estrategia de conteo previo e Inventario General (20/11/2026)',''];DEC.forEach(function(d,i){var s=DST[i]||{e:'Pendiente',m:''};t.push(d.id+'. '+d.t);t.push('   Propuesta: '+d.p);t.push('   Estado: '+s.e);t.push('   Comentario: '+(s.m||'—'));t.push('');});t.push('COMENTARIOS GENERALES');t.push(document.getElementById('gcom').value||'—');saveFile('Coraza_decisiones_direccion.txt',t.join(NL),'text/plain;charset=utf-8');}
+
+/* ---------- Navegación e inicio ---------- */
+var links=Array.prototype.slice.call(document.querySelectorAll('#nav a'));
+function onScroll(){var cur=null;links.forEach(function(a){var el=document.querySelector(a.getAttribute('href'));if(el&&el.getBoundingClientRect().top<=140)cur=a;});links.forEach(function(a){a.classList.toggle('on',a===cur);});}
+window.addEventListener('scroll',onScroll);onScroll();
+links.forEach(function(a){a.addEventListener('click',function(){document.getElementById('nav').classList.remove('open');});});
+cargar(false);
+setInterval(function(){if(!TIMER&&!DTIMER&&!document.hidden&&APPSCRIPT_URL){cargar(false);}},60000);
+</script></body></html>
